@@ -1,8 +1,8 @@
 require 'socket'
  
-host = 'www.google.com'     # The web server
-port = 80                           # Default HTTP port
-path = "/index.htm"                 # The file we want 
+host = 'localhost'     # The web server
+port = 3000                         # Default localhost port
+path = "./index.html"                 # The file we want 
 
 # This is the HTTP request we send to fetch a file
 request = "GET #{path} HTTP/1.0\r\n\r\n"
