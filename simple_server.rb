@@ -1,5 +1,6 @@
 require 'socket'               # Get sockets from stdlib
 require 'uri'
+require 'json'
 
 #thank you https://practicingruby.com/articles/implementing-an-http-file-server
 
@@ -36,30 +37,59 @@ def requested_file(request_line)
   File.join(WEB_ROOT, *clean)
 end
 
+def method(request_line)
+	lines = request_line.split(" ")
+	lines[0]
+end
+
+def body(request_line)
+	arr = request_line.split("\r\n\r\n")
+	body = arr[2]
+	body
+end
+
 server = TCPServer.new('localhost',3000)  # Socket to listen on port 2000
 
 loop do
   socket = server.accept
-  request_line = socket.gets
+  request_line = socket.read_nonblock(256)
 
   STDERR.puts request_line
+	
+	command = method(request_line)
 	
 	break if request_line == 'quit'
 	
   path = requested_file(request_line)
-	STDERR.puts path
+	
   if File.exist?(path) && !File.directory?(path)
-    File.open(path, "rb") do |file|
-      socket.print "HTTP/1.1 200 OK\r\n" +
+		if command == "GET"
+			File.open(path, "rb") do |file|
+				socket.print "HTTP/1.1 200 OK\r\n" +
                    "Content-Type: #{content_type(file)}\r\n" +
                    "Content-Length: #{file.size}\r\n" +
                    "Connection: close\r\n"
 
-      socket.print "\r\n"
+				socket.print "\r\n"
 
-      # write the contents of the file to the socket
-      IO.copy_stream(file, socket)
-    end
+				# write the contents of the file to the socket
+				IO.copy_stream(file, socket)
+			end
+		elsif command == "POST"
+				request_body = body(request_line)
+				params = JSON.parse(request_body)
+        user_data = "<li>name: #{params['viking']['name']}</li><li>e-mail: #{params['viking']['email']}</li>"
+				response_body = File.read(path)
+				socket.print "HTTP/1.1 200 OK\r\n" +
+                   "Content-Type: #{content_type(response_body)}\r\n" +
+                   "Content-Length: #{response_body.size}\r\n" +
+                   "Connection: close\r\n"
+
+				socket.print "\r\n"
+
+				# write the contents of the file to the socket
+				socket.puts response_body.gsub('<%= yield %>', user_data)
+		end
   else
     message = "File not found\n"
 

@@ -28,10 +28,8 @@ end
 def post_request
 	viking = get_info
 	request = "POST #{@path} HTTP/1.0\r\n\r\n" +
-						"From: self" +
-						"User-Agent: HTTPTool/1.0" +
-						"Content-Type: text/json" +
-						"Content-Length: #{viking.size}"
+						"Content-Length: #{viking.size}\r\n\r\n" +
+						"#{viking}"
 end
 
 def offer_choice
